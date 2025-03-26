@@ -10,10 +10,13 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import com.example.jpc_google_maps_demo.map.GeocodeHelper
 import com.example.jpc_google_maps_demo.ui.screens.MapAppScreen
 import com.example.jpc_google_maps_demo.ui.theme.JpcgooglemapsdemoTheme
 import com.example.jpc_google_maps_demo.map.MapController
+import com.example.jpc_google_maps_demo.ui.MapViewModel
+import com.example.jpc_google_maps_demo.ui.SelectedPlace
 import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.widget.Autocomplete
@@ -26,6 +29,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var placeLauncher: ActivityResultLauncher<Intent>
     private val mapController = MapController()
     private val geocodeHelper = GeocodeHelper(this)
+    private val mapViewModel: MapViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,7 +48,8 @@ class MainActivity : ComponentActivity() {
             JpcgooglemapsdemoTheme {
                 MapAppScreen(
                     mapController = mapController,
-                    onSearchClick = { launchPlaceSearch() }
+                    onSearchClick = { launchPlaceSearch() },
+                    viewModel = mapViewModel
                 )
             }
         }
@@ -129,7 +134,14 @@ class MainActivity : ComponentActivity() {
         geocodeHelper.validateAddress(address) { validatedLatLng ->
             Log.i(TAG, "geocodeHelper.validateAddress.validatedLatLng: $validatedLatLng")
             validatedLatLng?.let {
-                mapController.moveTo(it, place.name ?: "Selected")
+                val selected = SelectedPlace(
+                    name = place.name ?: "Unnamed",
+                    address = address,
+                    rating = place.rating?.toString() ?: "0.0",
+                    latLng = it
+                )
+                mapViewModel.updatePlace(selected)
+                mapController.moveTo(it, selected.name)
             }
         }
     }
