@@ -5,12 +5,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
+import com.example.jpc_google_maps_demo.map.MapController
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.model.LatLng
 
 @Composable
-fun MapScreen() {
+fun MapScreen(mapController: MapController) {
     val context = LocalContext.current
     val mapView = remember { MapView(context) }
 
@@ -22,6 +23,7 @@ fun MapScreen() {
             map.uiSettings.isZoomControlsEnabled = true
             val berlin = LatLng(52.52, 13.405)
             map.moveCamera(CameraUpdateFactory.newLatLngZoom(berlin, 12f))
+            mapController.googleMap = map
         }
         mapView
     })

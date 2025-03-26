@@ -12,24 +12,24 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import com.example.jpc_google_maps_demo.map.MapController
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MapAppScreen(
+    mapController: MapController,
     onSearchClick: () -> Unit
 ) {
     Scaffold(
-        topBar = {
-            TopAppBar(title = { Text("Google Maps + Autocomplete") })
-        },
+        topBar = { TopAppBar(title = { Text("Google Maps Demo") }) },
         floatingActionButton = {
             FloatingActionButton(onClick = onSearchClick) {
-                Icon(Icons.Default.Search, contentDescription = "Search Address")
+                Icon(Icons.Default.Search, contentDescription = "Search")
             }
         }
     ) { innerPadding ->
         Box(modifier = Modifier.padding(innerPadding)) {
-            MapScreen()
+            MapScreen(mapController = mapController)
         }
     }
 }

@@ -10,31 +10,28 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import com.example.jpc_google_maps_demo.map.GeocodeHelper
 import com.example.jpc_google_maps_demo.ui.screens.MapAppScreen
 import com.example.jpc_google_maps_demo.ui.theme.JpcgooglemapsdemoTheme
-import com.example.jpc_google_maps_demo.utils.GeocodeHelper
+import com.example.jpc_google_maps_demo.map.MapController
 import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.widget.Autocomplete
 import com.google.android.libraries.places.widget.AutocompleteActivity
 import com.google.android.libraries.places.widget.model.AutocompleteActivityMode
 
-class MainActivity : ComponentActivity() {
-    private lateinit var geocodeHelper: GeocodeHelper
-    private lateinit var placeLauncher: ActivityResultLauncher<Intent>
+const val TAG = "DEBUG"
 
-    companion object {
-        private const val TAG = "MainActivity"
-    }
+class MainActivity : ComponentActivity() {
+    private lateinit var placeLauncher: ActivityResultLauncher<Intent>
+    private val mapController = MapController()
+    private val geocodeHelper = GeocodeHelper(this)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         // 1. Initialize Places API with API Key from Manifest or Config
         initializePlacesApi()
-
-        // 2. Initialize Geocode Helper
-        geocodeHelper = GeocodeHelper(this)
 
         // 3. Setup Place Search Launcher
         setupPlaceSearchLauncher()
@@ -45,7 +42,10 @@ class MainActivity : ComponentActivity() {
         // 5. Set Content
         setContent {
             JpcgooglemapsdemoTheme {
-                MapAppScreen { launchPlaceSearch() }
+                MapAppScreen(
+                    mapController = mapController,
+                    onSearchClick = { launchPlaceSearch() }
+                )
             }
         }
     }
@@ -86,7 +86,9 @@ class MainActivity : ComponentActivity() {
                 Activity.RESULT_OK -> {
                     // Handle successful place selection
                     val place = Autocomplete.getPlaceFromIntent(result.data!!)
-                    handlePlaceSelection(place)
+                    Log.e(TAG, "Autocomplete Handle successful place selection:\n $place")
+                    //handlePlaceSelection(place)
+                    onPlaceSelected(place)
                 }
 
                 AutocompleteActivity.RESULT_ERROR -> {
@@ -104,18 +106,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun handlePlaceSelection(place: Place) {
-        val address = place.address ?: ""
-        val latLng = place.latLng
-
-        Log.d(TAG, "Selected Address: $address")
-        Log.d(TAG, "Selected LatLng: $latLng")
-
-        geocodeHelper.validateAddress(address) { validatedLocation ->
-            Log.d(TAG, "Validated Location: $validatedLocation")
-        }
-    }
-
     private fun launchPlaceSearch() {
         val fields = listOf(
             Place.Field.ID,
@@ -127,5 +117,20 @@ class MainActivity : ComponentActivity() {
             .IntentBuilder(AutocompleteActivityMode.OVERLAY, fields)
             .build(this)
         placeLauncher.launch(intent)
+    }
+
+    private fun onPlaceSelected(place: Place) {
+        Log.d(TAG, "Selected Address: ${place.address}")
+        Log.d(TAG, "Selected LatLng: ${place.latLng}")
+        Log.i(TAG, "place.formattedAddress: ${place.formattedAddress}")
+        Log.i(TAG, "place.address.deprecated: ${place.address}")
+
+        val address = place.address ?: return
+        geocodeHelper.validateAddress(address) { validatedLatLng ->
+            Log.i(TAG, "geocodeHelper.validateAddress.validatedLatLng: $validatedLatLng")
+            validatedLatLng?.let {
+                mapController.moveTo(it, place.name ?: "Selected")
+            }
+        }
     }
 }
